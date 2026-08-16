@@ -3,7 +3,7 @@ from auth_service.database import SessionLocal
 from typing import Annotated
 from .schema import UserLogin,CreateUser
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select,update
+from sqlalchemy import select,update,delete
 from .models import User, RefreshToken
 from fastapi.security import OAuth2PasswordBearer
 from pwdlib import PasswordHash
@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 from .config import settings
 
 router = APIRouter(prefix="/auth")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="refresh")
 password_hash = PasswordHash.recommended() 
 
 async def get_db():
@@ -102,4 +102,31 @@ async def get_new_token(token:Annotated[str|None,Cookie(alias="refresh_token")],
         raise HTTPException(status_code=401,detail="Session Expired,Login Again")
 
 @router.post("/logout")
-async def logout_current_device()
+async def logout_current_device(token:Annotated[str|None,Cookie(alias="refresh_token")],db:Annotated[AsyncSession,Depends(get_db)],
+                                response:Response):
+    if token is None:
+        response.delete_cookie(key="refresh_token", path="/auth")
+        return {"detail": "Logged out"}
+    incoming_hash = hmac.new(settings.TOKEN_HASH_KEY.encode(), token.encode(), hashlib.sha256).hexdigest()
+    stmt = delete(RefreshToken).where(RefreshToken.token_hash == incoming_hash)
+    await db.execute(stmt)
+    await db.commit()
+
+    response.delete_cookie(key="refresh_token", path="/auth")
+    return {"detail": "Logged out"}
+
+@router.post("/logout-all")
+async def logout_all(token:Annotated[str|None,Cookie(alias="refresh_token")],db:Annotated[AsyncSession,Depends(get_db)],
+                                response:Response):
+    if token is None:
+        raise HTTPException(status_code=401, detail="Invalid session")
+
+    payload = jwt.decode(token, settings.PUBLIC_KEY, algorithms=[settings.JWT_ALGORITHM])
+    user_id = int(payload["sub"])
+
+    stmt = delete(RefreshToken).where(RefreshToken.user_id == user_id)
+    await db.execute(stmt)
+    await db.commit()
+
+    response.delete_cookie(key="refresh_token", path="/auth")
+    return {"detail": "Logged out of all devices"}

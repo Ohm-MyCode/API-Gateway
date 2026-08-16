@@ -13,6 +13,7 @@ dependencies = [
     "pyjwt[crypto]>=2.13.0",
     "python-dotenv>=1.2.2",
     "sqlalchemy>=2.0.51",
+    "nanoid>=2.0.0",
 ]
 
 [dependency-groups]
