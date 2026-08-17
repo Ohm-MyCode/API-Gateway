@@ -14,6 +14,7 @@ dependencies = [
     "python-dotenv>=1.2.2",
     "sqlalchemy>=2.0.51",
     "nanoid>=2.0.0",
+    "httpx>=0.28.1",
 ]
 
 [dependency-groups]
