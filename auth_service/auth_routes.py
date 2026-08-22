@@ -12,7 +12,8 @@ from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from datetime import datetime, timedelta, timezone
 from .config import settings
 
-router = APIRouter(prefix="/auth")
+#router = APIRouter(prefix="/auth")
+router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="refresh")
 password_hash = PasswordHash.recommended() 
 
@@ -40,15 +41,15 @@ async def create_user(user:CreateUser, db:Annotated[AsyncSession,Depends(get_db)
 @router.post("/login")
 async def login(user:UserLogin, db:Annotated[AsyncSession,Depends(get_db)],response:Response):
     stmt = select(User).where(User.email==user.email)
-    result = (await db.scalars(stmt)).one_or_none()
+    result = await db.scalar(stmt)
     if (result is None) or (not password_hash.verify(user.password, result.password_hash)):
         raise HTTPException(status_code=401, detail="Email/Password Combination is incorrect or doesn't exist.")
     expire_access = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     expire_refresh = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     access_token_payload ={"sub":str(result.id),"exp":expire_access,"type":"access"}
     refresh_token_payload ={"sub":str(result.id),"exp":expire_refresh,"type":"refresh"}
-    access_token = jwt.encode(access_token_payload, settings.PRIVATE_KEY,settings.JWT_ALGORITHM)
-    refresh_token = jwt.encode(refresh_token_payload, settings.PRIVATE_KEY,settings.JWT_ALGORITHM)
+    access_token = jwt.encode(access_token_payload, settings.PRIVATE_KEY,algorithm=settings.JWT_ALGORITHM)
+    refresh_token = jwt.encode(refresh_token_payload, settings.PRIVATE_KEY,algorithm=settings.JWT_ALGORITHM)
     hashed_reftoken= hmac.new(settings.TOKEN_HASH_KEY.encode(),refresh_token.encode(),hashlib.sha256).hexdigest()
     newtoken = RefreshToken(user_id = result.id, expires_at=expire_refresh,token_hash=hashed_reftoken)
     db.add(newtoken)
