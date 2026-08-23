@@ -1,0 +1,67 @@
+services:
+
+  auth-db:
+    image: postgres:17
+    volumes:
+      - auth_db_vol:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: auth_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d auth_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  url-db:
+    image: postgres:17
+    volumes:
+      - url_db_vol:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: url_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d url_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  auth-service:
+    image: auth-service:latest
+    env_file:
+      - .env
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    volumes:
+      - ./auth_service/keys:/app/secrets:ro
+
+  url-service:
+    image: url-service:latest
+    env_file:
+      - .env
+    depends_on:
+      url-db:
+        condition: service_healthy
+
+  gateway:
+    image: gateway:latest
+    env_file:
+      - .env
+    depends_on:
+      auth-service:
+        condition: service_started
+      url-service:
+        condition: service_started
+    volumes:
+      - ./auth_service/keys/public.pem:/app/secrets/public.pem:ro
+    ports:
+      - "8000:8000"
+
+volumes:
+  auth_db_vol:
+  url_db_vol:

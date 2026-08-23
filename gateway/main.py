@@ -15,8 +15,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 SERVICES = {
-    "auth": "http://localhost:8001",
-    "url": "http://localhost:8002",
+    "auth": "http://auth-service:8000",
+    "url": "http://url-service:8000",
 }
 
 PUBLIC_ROUTES = {
@@ -45,7 +45,7 @@ async def auth_middleware(request, call_next):
             status_code=401,
         )
     try:
-        scheme, token = auth.split()
+        _, token = auth.split()
         payload = jwt.decode(token,settings.PUBLIC_KEY , algorithms=[settings.JWT_ALGORITHM])
         request.state.userid = payload["sub"]
         
@@ -56,7 +56,7 @@ async def auth_middleware(request, call_next):
 @app.get("/{shortcode}")
 async def resolve_shortcode(shortcode: str, request: Request):
     response = await request.app.state.http_client.get(
-        f"http://localhost:8002/{shortcode}"
+        f"http://url-service:8000/{shortcode}"
     )
     return Response(
         content=response.content,
