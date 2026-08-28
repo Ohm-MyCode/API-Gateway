@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
+from functools import cached_property
 class DBSettings(BaseSettings):
     AUTH_DB:str
     model_config = SettingsConfigDict(
@@ -15,11 +16,11 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS:int
     TOKEN_HASH_KEY:str
 
-    @property
+    @cached_property
     def PRIVATE_KEY(self) -> str:
         return Path(self.PRIVATE_KEY_PATH).read_text()
 
-    @property
+    @cached_property
     def PUBLIC_KEY(self) -> str:
         return Path(self.PUBLIC_KEY_PATH).read_text()
 

@@ -4,13 +4,22 @@ import httpx
 from .config import settings
 import jwt
 from fastapi.responses import JSONResponse, Response
-
+from redis.asyncio import Redis
+import time
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.http_client = httpx.AsyncClient()
+    redis_client = Redis(
+    host=settings.redis_host,
+    port=settings.redis_port,
+    decode_responses=True,
+    )
+    script = settings.lua_script
+    app.state.token_bucket_script = redis_client.register_script(script)
     yield
     await app.state.http_client.aclose()
+    await redis_client.aclose()
 
 app = FastAPI(lifespan=lifespan)
 
@@ -52,6 +61,28 @@ async def auth_middleware(request, call_next):
     except jwt.PyJWTError:
         return JSONResponse({"details":"Unauthorized, try logging in again"},status_code=401)
     return await call_next(request)
+
+@app.middleware("http")
+async def rate_limiter(request,call_next):
+    if request.method == "GET":
+            parts = request.url.path.strip("/").split("/")
+            if len(parts) == 1 and parts[0] not in SERVICES:
+                return await call_next(request)
+    user_id= getattr(request.state,"userid",None)
+    script = request.app.state.token_bucket_script
+    current_time = int(time.time() * 1000)
+    
+    if user_id is not None:
+        bucket_key=f"rl:user:{user_id}"
+    else:
+        ip = request.client.host if request.client else "unknown"
+        bucket_key=f"rl:ip:{ip}"
+
+    allowed = await script(keys=[bucket_key],args=[settings.max_capacity,settings.refill_rate,current_time,],)
+    if allowed == 1:
+        return await call_next(request)
+    else:
+        return JSONResponse(status_code = 429, content = {"detail":"Too many attempts please try after sometime"})
 
 @app.get("/{shortcode}")
 async def resolve_shortcode(shortcode: str, request: Request):

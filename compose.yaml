@@ -48,6 +48,10 @@ services:
       url-db:
         condition: service_healthy
 
+  redis:
+    image: redis:latest
+    restart: unless-stopped
+    
   gateway:
     image: gateway:latest
     env_file:
@@ -56,6 +60,8 @@ services:
       auth-service:
         condition: service_started
       url-service:
+        condition: service_started
+      redis:
         condition: service_started
     volumes:
       - ./auth_service/keys/public.pem:/app/secrets/public.pem:ro
