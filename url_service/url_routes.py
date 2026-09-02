@@ -8,6 +8,11 @@ from sqlalchemy.exc import IntegrityError
 from .models import Url
 from nanoid import generate
 from .schema import GetUrlModel,ReturnUrlModel
+from metrics import total_shortcodes_created,shortcode_not_found,total_redirects,cache_metrics
+from logger import log 
+from config import settings
+from redis import RedisError
+
 router = APIRouter()
 
 async def get_db():
@@ -31,13 +36,15 @@ async def create_new_shortcode(body:GetUrlModel,db:Annotated[AsyncSession, Depen
             new_url = Url(owner_id=uid,original_url=body.url,shortcode=shortcode)
             db.add(new_url)
             await db.commit()
+            total_shortcodes_created.inc()
             return{'Message':'ShortCode created Successfully'}
         except IntegrityError:
+            log.info("Generated Shortcode clashed")
             continue
 
 @router.delete("/delete/{short_code}")
 async def delete_shortcode(short_code:Annotated[str,Path(min_length=8, max_length=8)],db:Annotated[AsyncSession, Depends(get_db)],
-                           uid:Annotated[int, Depends(get_current_user_id)]):
+                           uid:Annotated[int, Depends(get_current_user_id)],request):
     stmt = select(Url).where(Url.shortcode==short_code)
     result = await db.scalar(stmt)
     if (result is None) or (result.owner_id != uid):
@@ -45,6 +52,12 @@ async def delete_shortcode(short_code:Annotated[str,Path(min_length=8, max_lengt
     stmt = delete(Url).where(Url.shortcode ==short_code)
     await db.execute(stmt)
     await db.commit()
+
+    redis = request.app.state.redis_client
+    try:
+        await redis.delete(f"url:{short_code}")
+    except RedisError:
+        log.error("Redis Unreachable")
     return {'Message':'ShortCode and Url deleted successfully'}
 
 @router.get("/url/{short_code}",response_model=ReturnUrlModel)
@@ -66,19 +79,57 @@ async def get_all_shortcodes(db:Annotated[AsyncSession, Depends(get_db)],uid:Ann
 
 @router.patch("/update/{short_code}")
 async def update_shortcode(short_code:Annotated[str,Path(min_length=8, max_length=8)],db:Annotated[AsyncSession, Depends(get_db)],
-                           uid:Annotated[int, Depends(get_current_user_id)],body:GetUrlModel):
+                           uid:Annotated[int, Depends(get_current_user_id)],body:GetUrlModel,request):
     stmt = select(Url).where(Url.shortcode==short_code)
     result = await db.scalar(stmt)
     if (result is None) or (result.owner_id != uid):
         raise HTTPException(status_code=409, detail="ShortCode not found")
     result.original_url = body.url
     await db.commit()
+    redis = request.app.state.redis_client
+    try:
+        await redis.delete(f"url:{short_code}")
+    except RedisError:
+        log.error("Redis Unreachable")
     return{'Message':'Updated Successfully'}
 
-@router.get("/{shortcode}")
-async def get_url(shortcode:str,db:Annotated[AsyncSession, Depends(get_db)]):
-    stmt = select(Url).where(Url.shortcode==shortcode)
+
+
+
+async def lookup_and_cache(short_code: str, db: AsyncSession, redis) -> str:
+    stmt = select(Url).where(Url.shortcode == short_code)
     result = (await db.scalars(stmt)).one_or_none()
+
     if result is None:
+        shortcode_not_found.inc()
         raise HTTPException(status_code=404, detail="Link Not Found/Deleted")
-    return RedirectResponse(result.original_url)
+
+    try:
+        await redis.set(f"url:{short_code}", result.original_url, ex=settings.ttl)
+    except RedisError:
+        log.error("redis_unreachable", operation="shortcode_cache_write")
+
+    cache_metrics.labels(result="Cache Miss").inc()
+    total_redirects.inc()
+    return result.original_url
+
+
+@router.get("/{short_code}")
+async def get_url(short_code:Annotated[str,Path(min_length=8, max_length=8)], db: Annotated[AsyncSession, 
+                    Depends(get_db)], request: Request):
+    
+    redis = request.app.state.redis_client
+
+    try:
+        destination_url = await redis.get(f"url:{short_code}")
+    except RedisError:
+        log.error("redis_unreachable", operation="shortcode_cache_read")
+        destination_url = None
+
+    if destination_url is not None:
+        cache_metrics.labels(result="Cache Hit").inc()
+        total_redirects.inc()
+        return RedirectResponse(destination_url)
+
+    destination_url = await lookup_and_cache(short_code, db, redis)
+    return RedirectResponse(destination_url)

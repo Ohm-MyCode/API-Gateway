@@ -1,22 +1,14 @@
 import asyncio
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from .models import Base
-
-
-class Settings(BaseSettings):
-    URL_DB:str
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        extra="ignore",
-    )
-
-settings = Settings()
+from metrics import register_db_metrics
+from config import settings
 
 if settings.URL_DB is None:
     raise ValueError("Check Url service DB")
 
 engine = create_async_engine(settings.URL_DB,pool_size=5,max_overflow=5,pool_timeout=20)
+register_db_metrics(engine)
 
 async def init_db():
     async with engine.begin() as conn:

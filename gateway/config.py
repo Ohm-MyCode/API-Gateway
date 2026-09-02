@@ -20,5 +20,18 @@ class Settings(BaseSettings):
     def lua_script(self) -> str:
         script_path = Path(__file__).parent / "script.lua"
         return script_path.read_text()
+    
+SERVICES = {
+    "auth": "http://auth-service:8000",
+    "url": "http://url-service:8000",
+}
+
+AUTH_ROUTES = {
+    "/auth/login",
+    "/auth/signup",
+    "/auth/refresh",
+    "/auth/logout",
+    "/auth/logout-all"
+}
 
 settings = Settings()
