@@ -2,13 +2,13 @@ from prometheus_client import Counter, Gauge, Histogram
 from sqlalchemy import event
 import time
 
-total_login_attempts=Counter("login_attempts","Total Login Attempts",["result"])
-refresh_token_attempts = Counter("ref_token_attempts","Total Number of refresh tokens attempted/issued",
+total_login_attempts=Counter("total_login_attempts","Total Login Attempts",["result"])
+refresh_token_attempts = Counter("refresh_token_attempts","Total Number of refresh tokens attempted/issued",
                                  ["result"])
 
-active_connections = Gauge("db_active_conn","Total Number of Connections Active")
-db_query_duration = Histogram("db_query_duration_seconds","Time spent on database queries",)
-db_active_queries = Gauge('db_active_queries_current',
+active_connections = Gauge("active_connections","Total Number of Connections Active")
+db_query_duration = Histogram("db_query_duration","Time spent on database queries",)
+db_active_queries = Gauge('db_active_queries',
         'Total number of database queries currently executing')
 
 def register_db_metrics(engine):

@@ -1,16 +1,16 @@
 from fastapi import APIRouter, Depends,HTTPException,Request,Path
-from .database import SessionLocal
+from url_service.database import SessionLocal
 from fastapi.responses import RedirectResponse
 from typing import Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select,delete
 from sqlalchemy.exc import IntegrityError
-from .models import Url
+from url_service.models import Url
 from nanoid import generate
-from .schema import GetUrlModel,ReturnUrlModel
-from metrics import total_shortcodes_created,shortcode_not_found,total_redirects,cache_metrics
-from logger import log 
-from config import settings
+from url_service.schema import GetUrlModel,ReturnUrlModel
+from url_service.metrics import total_shortcodes_created,shortcode_not_found,total_redirects,cache_metrics
+from url_service.logger import log 
+from url_service.config import settings
 from redis import RedisError
 
 router = APIRouter()

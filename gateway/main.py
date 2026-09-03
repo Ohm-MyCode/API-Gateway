@@ -1,11 +1,11 @@
 from fastapi import FastAPI, Request, HTTPException
 from contextlib import asynccontextmanager
 import httpx
-from .config import settings
+from gateway.config import settings
 from fastapi.responses import Response
 from redis.asyncio import Redis
 from gateway.logger import log
-from middlewares import auth_middleware , logging_middleware, rate_limiting_middleware
+from gateway.middlewares import auth_middleware , logging_middleware, rate_limiting_middleware
 from gateway.config import SERVICES
 from time import perf_counter
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -14,7 +14,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 async def lifespan(app: FastAPI):
     app.state.http_client = httpx.AsyncClient()
     redis_client = Redis(host=settings.redis_host,port=settings.redis_port,decode_responses=True,)
-    script = settings.lua_script
+    script = settings.lua_script()
     app.state.token_bucket_script = redis_client.register_script(script)
     yield
     await app.state.http_client.aclose()

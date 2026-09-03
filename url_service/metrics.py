@@ -7,9 +7,9 @@ shortcode_not_found = Counter("shortcode_not_found","Total times Shortcode was n
 total_redirects = Counter("total_redirects","Total Successful Redirects")
 cache_metrics = Counter("cache_metrics","Cache Hits and Misses", ['result'])
 
-active_connections = Gauge("db_active_conn","Total Number of Connections Active")
-db_query_duration = Histogram("db_query_duration_seconds","Time spent on database queries",)
-db_active_queries = Gauge('db_active_queries_current',
+active_connections = Gauge("active_connections","Total Number of Connections Active")
+db_query_duration = Histogram("db_query_duration","Time spent on database queries",)
+db_active_queries = Gauge('db_active_queries',
         'Total number of database queries currently executing')
 
 def register_db_metrics(engine):

@@ -3,10 +3,10 @@ from contextlib import asynccontextmanager
 from url_service.url_routes import router
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import OperationalError,IntegrityError,TimeoutError
-from logger import log
+from url_service.logger import log
 from prometheus_fastapi_instrumentator import Instrumentator
 from redis.asyncio import Redis
-from config import settings
+from url_service.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

@@ -2,6 +2,7 @@ services:
 
   auth-db:
     image: postgres:17
+    container_name: auth-db
     volumes:
       - auth_db_vol:/var/lib/postgresql/data
     environment:
@@ -17,6 +18,7 @@ services:
 
   url-db:
     image: postgres:17
+    container_name: url-db
     volumes:
       - url_db_vol:/var/lib/postgresql/data
     environment:
@@ -31,7 +33,12 @@ services:
       start_period: 10s
 
   auth-service:
+    build:
+      context: .
+      dockerfile: auth_service/Dockerfile
+
     image: auth-service:latest
+    container_name: auth-service
     env_file:
       - .env
     depends_on:
@@ -41,7 +48,11 @@ services:
       - ./auth_service/keys:/app/secrets:ro
 
   url-service:
+    build:
+      context: .
+      dockerfile: url_service/Dockerfile
     image: url-service:latest
+    container_name: url-service
     env_file:
       - .env
     depends_on:
@@ -50,10 +61,15 @@ services:
 
   redis:
     image: redis:latest
+    container_name: redis
     restart: unless-stopped
     
   gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
     image: gateway:latest
+    container_name: gateway
     env_file:
       - .env
     depends_on:
@@ -78,8 +94,38 @@ services:
       - '--storage.tsdb.path=/prometheus'
     ports:
       - "9090:9090"
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+     - prometheus
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+    - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    ports:
+      - "12345:12345"
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - /etc/alloy/config.alloy
 
 volumes:
   auth_db_vol:
   url_db_vol:
   prometheus_data:
+  grafana_data:

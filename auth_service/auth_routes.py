@@ -1,17 +1,17 @@
 from fastapi import APIRouter,Depends,HTTPException, status, Response,Cookie, Request
 from auth_service.database import SessionLocal
 from typing import Annotated
-from .schema import UserLogin,CreateUser
+from auth_service.schema import UserLogin,CreateUser
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select,update,delete
-from .models import User, RefreshToken
+from auth_service.models import User, RefreshToken
 from fastapi.security import OAuth2PasswordBearer
 from pwdlib import PasswordHash
 import jwt,hmac,hashlib
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from datetime import datetime, timedelta, timezone
-from .config import settings
-from metrics import total_login_attempts,refresh_token_attempts
+from auth_service.config import settings
+from auth_service.metrics import total_login_attempts,refresh_token_attempts
 
 
 #router = APIRouter(prefix="/auth")
