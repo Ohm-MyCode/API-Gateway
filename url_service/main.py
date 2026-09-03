@@ -10,7 +10,8 @@ from url_service.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    redis_client = Redis(host=settings.redis_host,port=settings.redis_port,decode_responses=True,)
+    redis_client = Redis(host=settings.redis_host,port=settings.redis_port,decode_responses=True,
+                         socket_connect_timeout=0.5,socket_timeout=0.5)
     app.state.redis_client = redis_client
     yield
     await redis_client.aclose()

@@ -123,7 +123,9 @@ services:
       - run
       - --server.http.listen-addr=0.0.0.0:12345
       - /etc/alloy/config.alloy
-
+  debug:
+    image: nicolaka/netshoot
+    command: sleep infinity
 volumes:
   auth_db_vol:
   url_db_vol:

@@ -1,422 +1,46 @@
 {
-  "title": "Logs Overview (Loki)",
-  "uid": "logs-overview",
-  "schemaVersion": 39,
-  "version": 1,
-  "editable": true,
+  "title": "API Gateway - Logs Overview",
   "refresh": "10s",
-  "time": {
-    "from": "now-1h",
-    "to": "now"
-  },
-  "timezone": "browser",
-  "tags": [
-    "backend",
-    "portfolio",
-    "logs"
-  ],
-  "templating": {
-    "list": [
-      {
-        "name": "DS_LOKI",
-        "label": "Loki",
-        "type": "datasource",
-        "query": "loki",
-        "current": {},
-        "hide": 0
-      },
-      {
-        "name": "container",
-        "label": "Service",
-        "type": "query",
-        "datasource": {
-          "type": "loki",
-          "uid": "${DS_LOKI}"
-        },
-        "query": {
-          "query": "label_values(container)",
-          "refId": "ContainerVariable"
-        },
-        "refresh": 2,
-        "includeAll": true,
-        "multi": true,
-        "current": {
-          "text": "All",
-          "value": [
-            "$__all"
-          ]
-        }
-      },
-      {
-        "name": "search",
-        "label": "Search text",
-        "type": "textbox",
-        "query": "",
-        "current": {
-          "text": "",
-          "value": ""
-        }
-      }
-    ]
-  },
   "panels": [
     {
-      "id": 1,
+      "title": "Log Volume (5m)",
       "type": "stat",
-      "title": "Log Volume (lines/min)",
-      "description": "",
-      "datasource": {
-        "type": "loki",
-        "uid": "${DS_LOKI}"
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 0,
-        "y": 0
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "area"
-      },
-      "targets": [
-        {
-          "expr": "sum(count_over_time({container=~\"$container\"} |~ \"$search\" [$__interval])) * 60",
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "queryType": "range"
-        }
-      ]
+      "query": "sum(count_over_time({service_name=~\".+\"}[5m]))"
     },
     {
-      "id": 2,
+      "title": "Errors (5m)",
       "type": "stat",
-      "title": "Error/Exception Lines (last 5m)",
-      "description": "Counts log lines at error or critical level across selected services.",
-      "datasource": {
-        "type": "loki",
-        "uid": "${DS_LOKI}"
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 6,
-        "y": 0
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "area"
-      },
-      "targets": [
-        {
-          "expr": "sum(count_over_time({container=~\"$container\"} | json | level=~\"error|critical\" |~ \"$search\" [5m]))",
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "queryType": "range"
-        }
-      ]
+      "query": "sum(count_over_time({service_name=~\".+\"} | json | level=\"error\" [5m]))"
     },
     {
-      "id": 3,
+      "title": "Warnings (5m)",
       "type": "stat",
-      "title": "Request Failures (request_failed events, 5m)",
-      "description": "Counts request_failed log events emitted by the logging middleware's exception path.",
-      "datasource": {
-        "type": "loki",
-        "uid": "${DS_LOKI}"
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 12,
-        "y": 0
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "area"
-      },
-      "targets": [
-        {
-          "expr": "sum(count_over_time({container=~\"$container\"} | json | event=\"request_failed\" |~ \"$search\" [5m]))",
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "queryType": "range"
-        }
-      ]
+      "query": "sum(count_over_time({service_name=~\".+\"} | json | level=\"warning\" [5m]))"
     },
     {
-      "id": 4,
+      "title": "Dependency Failures (5m)",
       "type": "stat",
-      "title": "Redis/DB Unreachable Events (5m)",
-      "description": "Counts dependency-failure log events (Redis fail-open paths, DB unreachable, pool exhaustion).",
-      "datasource": {
-        "type": "loki",
-        "uid": "${DS_LOKI}"
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 18,
-        "y": 0
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "area"
-      },
-      "targets": [
-        {
-          "expr": "sum(count_over_time({container=~\"$container\"} | json | event=~\"redis_unreachable|db_unreachable|db_pool_exhausted\" |~ \"$search\" [5m]))",
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "queryType": "range"
-        }
-      ]
+      "query": "sum(count_over_time({service_name=~\".+\"} | json | event=~\"redis_unreachable|db_unreachable|db_pool_exhausted\" [5m]))"
     },
     {
-      "id": 5,
+      "title": "Logs by Level",
       "type": "timeseries",
-      "title": "Log Volume by Level",
-      "description": "Log line volume broken down by level (info/warning/error/critical), stacked.",
-      "datasource": {
-        "type": "loki",
-        "uid": "${DS_LOKI}"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "drawStyle": "bars",
-            "fillOpacity": 30,
-            "stacking": {
-              "mode": "normal"
-            }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "sum",
-            "max"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi"
-        }
-      },
-      "targets": [
-        {
-          "expr": "sum by (level) (count_over_time({container=~\"$container\"} | json | __error__=\"\" |~ \"$search\" [$__interval]))",
-          "legendFormat": "{{level}}",
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "queryType": "range"
-        }
-      ]
+      "query": "sum by(level) (count_over_time({service_name=~\".+\"} | json [5m]))"
     },
     {
-      "id": 6,
+      "title": "Logs by Service",
       "type": "timeseries",
-      "title": "Log Volume by Service",
-      "description": "Log line volume broken down by service (gateway / auth-service / url-service), stacked.",
-      "datasource": {
-        "type": "loki",
-        "uid": "${DS_LOKI}"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "drawStyle": "bars",
-            "fillOpacity": 30,
-            "stacking": {
-              "mode": "normal"
-            }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "sum",
-            "max"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi"
-        }
-      },
-      "targets": [
-        {
-          "expr": "sum by (container) (count_over_time({container=~\"$container\"} |~ \"$search\" [$__interval]))",
-          "legendFormat": "{{container}}",
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "queryType": "range"
-        }
-      ]
+      "query": "sum by(service_name) (count_over_time({service_name=~\".+\"}[5m]))"
     },
     {
-      "id": 7,
+      "title": "Recent Errors & Warnings",
       "type": "logs",
-      "title": "Errors & Exceptions",
-      "description": "Raw error/critical log lines across selected services. Use the container and search variables above to narrow down.",
-      "datasource": {
-        "type": "loki",
-        "uid": "${DS_LOKI}"
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 24,
-        "x": 0,
-        "y": 12
-      },
-      "options": {
-        "showTime": true,
-        "showLabels": false,
-        "showCommonLabels": false,
-        "wrapLogMessage": true,
-        "prettifyLogMessage": true,
-        "enableLogDetails": true,
-        "dedupStrategy": "none",
-        "sortOrder": "Descending"
-      },
-      "targets": [
-        {
-          "expr": "{container=~\"$container\"} | json | level=~\"error|critical\" |~ \"$search\"",
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "queryType": "range"
-        }
-      ]
+      "query": "{service_name=~\".+\"} | json | level=~\"error|warning\""
     },
     {
-      "id": 8,
-      "type": "logs",
       "title": "All Logs",
-      "description": "Full log stream. Paste a request_id into the search box above to trace one request across all three services.",
-      "datasource": {
-        "type": "loki",
-        "uid": "${DS_LOKI}"
-      },
-      "gridPos": {
-        "h": 12,
-        "w": 24,
-        "x": 0,
-        "y": 22
-      },
-      "options": {
-        "showTime": true,
-        "showLabels": false,
-        "showCommonLabels": false,
-        "wrapLogMessage": true,
-        "prettifyLogMessage": true,
-        "enableLogDetails": true,
-        "dedupStrategy": "none",
-        "sortOrder": "Descending"
-      },
-      "targets": [
-        {
-          "expr": "{container=~\"$container\"} |~ \"$search\"",
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "queryType": "range"
-        }
-      ]
+      "type": "logs",
+      "query": "{service_name=~\".+\"}"
     }
   ]
 }

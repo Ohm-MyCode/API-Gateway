@@ -62,7 +62,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(total_login_attempts_total{result=\"success\"}[5m])) / sum(rate(total_login_attempts_total[5m])) * 100",
+          "expr": "100 * (sum(increase(total_login_attempts_total{result=\"successful\"}[$__range])) / clamp_min(sum(increase(total_login_attempts_total[$__range])), 1))",
           "refId": "A",
           "datasource": {
             "type": "prometheus",
@@ -106,7 +106,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(total_login_attempts_total[5m])) * 60",
+          "expr": "sum(rate(total_login_attempts_total[$__rate_interval])) * 60",
           "refId": "A",
           "datasource": {
             "type": "prometheus",
@@ -119,7 +119,7 @@
       "id": 3,
       "type": "stat",
       "title": "Refresh Token Reuse Detections (per min)",
-      "description": "Spikes here indicate possible token theft/replay \u2014 worth watching closely.",
+      "description": "Potential refresh-token replay indicators (revoked token usage or missing token hash).",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -150,7 +150,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(refresh_token_attempts_total{result=\"reused\"}[5m])) * 60",
+          "expr": "sum(rate(refresh_token_attempts_total{result=~\"Revoked_Token|Token_Hash_Not_Found\"}[$__rate_interval])) * 60",
           "refId": "A",
           "datasource": {
             "type": "prometheus",
@@ -194,7 +194,7 @@
       },
       "targets": [
         {
-          "expr": "active_connections",
+          "expr": "active_connections{job=\"auth-service\"}",
           "refId": "A",
           "datasource": {
             "type": "prometheus",
@@ -247,7 +247,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(total_login_attempts_total[5m])) by (result)",
+          "expr": "sum(rate(total_login_attempts_total[$__rate_interval])) by (result)",
           "legendFormat": "{{result}}",
           "refId": "A",
           "datasource": {
@@ -261,7 +261,7 @@
       "id": 6,
       "type": "timeseries",
       "title": "Refresh Token Attempts by Result",
-      "description": "Watch the 'reused' series specifically \u2014 this is your token-rotation security signal.",
+      "description": "Monitor refresh token failures by reason.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -301,7 +301,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(refresh_token_attempts_total[5m])) by (result)",
+          "expr": "sum(rate(refresh_token_attempts_total[$__rate_interval])) by (result)",
           "legendFormat": "{{result}}",
           "refId": "A",
           "datasource": {
@@ -427,7 +427,7 @@
       },
       "targets": [
         {
-          "expr": "active_connections",
+          "expr": "active_connections{job=\"auth-service\"}",
           "legendFormat": "active_connections",
           "refId": "A",
           "datasource": {

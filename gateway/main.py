@@ -12,8 +12,9 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.http_client = httpx.AsyncClient()
-    redis_client = Redis(host=settings.redis_host,port=settings.redis_port,decode_responses=True,)
+    app.state.http_client = httpx.AsyncClient(timeout=httpx.Timeout(30.0))
+    redis_client = Redis(host=settings.redis_host,port=settings.redis_port,decode_responses=True,
+                         socket_connect_timeout=0.5,socket_timeout=0.5)
     script = settings.lua_script()
     app.state.token_bucket_script = redis_client.register_script(script)
     yield

@@ -48,10 +48,10 @@ async def login(user:UserLogin, db:Annotated[AsyncSession,Depends(get_db)],respo
     stmt = select(User).where(User.email==user.email)
     result = await db.scalar(stmt)
     if (result is None):
-        total_login_attempts.labels(result="user not found").inc()
+        total_login_attempts.labels(result="user_not_found").inc()
         raise HTTPException(status_code=401, detail="Email/Password Combination is incorrect or doesn't exist.")
     if (not password_hash.verify(user.password, result.password_hash)):
-            total_login_attempts.labels(result="incorrect password").inc()
+            total_login_attempts.labels(result="incorrect_password").inc()
             raise HTTPException(status_code=401, detail="Email/Password Combination is incorrect or doesn't exist.")
 
     total_login_attempts.labels(result="successful").inc()
@@ -77,7 +77,7 @@ async def login(user:UserLogin, db:Annotated[AsyncSession,Depends(get_db)],respo
 @router.post("/refresh")
 async def get_new_token(token:Annotated[str|None,Cookie(alias="refresh_token")],db:Annotated[AsyncSession,Depends(get_db)],response:Response):
     if token is None:
-        refresh_token_attempts.labels(result="No Token").inc()
+        refresh_token_attempts.labels(result="No_Token").inc()
         raise HTTPException(status_code=401,detail = "Invalid Login. Please Login Again")
     try:
         incomming_tokenhash=hmac.new(settings.TOKEN_HASH_KEY.encode(),token.encode(),hashlib.sha256).hexdigest()
@@ -86,14 +86,14 @@ async def get_new_token(token:Annotated[str|None,Cookie(alias="refresh_token")],
         result = (await db.scalars(stmt)).one_or_none()
 
         if (result is None):
-            refresh_token_attempts.labels(result="Token Hash Not Found").inc()
+            refresh_token_attempts.labels(result="Token_Hash_Not_Found").inc()
             raise HTTPException(status_code=401,detail="Invalid Token. Login Again")
 
         if result.is_revoked == True:
                 stmt = update(RefreshToken).where(RefreshToken.user_id == result.user_id).values(is_revoked=True)
                 await db.execute(stmt)
                 await db.commit()
-                refresh_token_attempts.labels(result="Revoked Token").inc()
+                refresh_token_attempts.labels(result="Revoked_Token").inc()
                 raise HTTPException(status_code=401, detail="Security alert — please log in again")
         
         expire_access = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -113,11 +113,11 @@ async def get_new_token(token:Annotated[str|None,Cookie(alias="refresh_token")],
         return {"access_token": access_token, "token_type": "bearer"}
         
     except ExpiredSignatureError:
-        refresh_token_attempts.labels(result="Expired Token").inc()
+        refresh_token_attempts.labels(result="Expired_Token").inc()
         raise HTTPException(status_code=401,detail="Session Expired,Login Again")
 
     except InvalidTokenError:
-        refresh_token_attempts.labels(result="Invalid Token").inc()
+        refresh_token_attempts.labels(result="Invalid_Token").inc()
         raise HTTPException(status_code=401,detail="Session Expired,Login Again")
 
 @router.post("/logout")
