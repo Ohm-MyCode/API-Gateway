@@ -1,6 +1,7 @@
+import time
+
 from prometheus_client import Counter, Gauge, Histogram
 from sqlalchemy import event
-import time
 
 total_shortcodes_created=Counter("total_shortcodes_created","Total Shortcodes Created")
 shortcode_not_found = Counter("shortcode_not_found","Total times Shortcode was not found")

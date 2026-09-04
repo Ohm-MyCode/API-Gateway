@@ -1,9 +1,10 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from auth_service.auth_routes import router
-from sqlalchemy.exc import OperationalError,IntegrityError,TimeoutError
-from auth_service.logger import log
 from prometheus_fastapi_instrumentator import Instrumentator
+from sqlalchemy.exc import IntegrityError, OperationalError, TimeoutError
+
+from auth_service.auth_routes import router
+from auth_service.logger import log
 
 app = FastAPI()
 

@@ -1,7 +1,10 @@
-from gateway.logger import log
 from time import perf_counter
+
 from nanoid import generate
+
+from gateway.logger import log
 from gateway.metrics import request_latency
+
 
 async def req_logging(request,call_next):
     request_id = str(generate())

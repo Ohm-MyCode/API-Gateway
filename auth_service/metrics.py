@@ -1,6 +1,7 @@
+import time
+
 from prometheus_client import Counter, Gauge, Histogram
 from sqlalchemy import event
-import time
 
 total_login_attempts=Counter("total_login_attempts","Total Login Attempts",["result"])
 refresh_token_attempts = Counter("refresh_token_attempts","Total Number of refresh tokens attempted/issued",

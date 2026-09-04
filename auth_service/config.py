@@ -1,6 +1,9 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pathlib import Path
 from functools import cached_property
+from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
 class DBSettings(BaseSettings):
     AUTH_DB:str
     model_config = SettingsConfigDict(

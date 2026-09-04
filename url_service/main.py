@@ -1,12 +1,15 @@
-from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from url_service.url_routes import router
+
+from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from sqlalchemy.exc import OperationalError,IntegrityError,TimeoutError
-from url_service.logger import log
 from prometheus_fastapi_instrumentator import Instrumentator
 from redis.asyncio import Redis
+from sqlalchemy.exc import IntegrityError, OperationalError, TimeoutError
+
 from url_service.config import settings
+from url_service.logger import log
+from url_service.url_routes import router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

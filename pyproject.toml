@@ -20,6 +20,7 @@ dependencies = [
     "structlog>=26.1.0",
     "prometheus-fastapi-instrumentator>=8.1.0",
     "pytest-asyncio>=1.4.0",
+    "pytest-mock>=3.15.1",
 ]
 
 [dependency-groups]
@@ -29,4 +30,12 @@ dev = [
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "ruff>=0.16.1",
+]
+[tool.ruff.lint.per-file-ignores]
+"**/alembic/**/*.py" = ["ALL"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+filterwarnings = [
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated.*",
 ]

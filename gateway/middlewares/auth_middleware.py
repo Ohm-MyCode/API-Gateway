@@ -1,7 +1,9 @@
-from gateway.config import SERVICES, AUTH_ROUTES, settings
-from fastapi.responses import JSONResponse
 import jwt
+from fastapi.responses import JSONResponse
+
+from gateway.config import AUTH_ROUTES, SERVICES, settings
 from gateway.logger import log
+
 
 async def auth_middleware(request, call_next):
 

@@ -1,7 +1,8 @@
-from sqlalchemy.orm import DeclarativeBase,Mapped,mapped_column, relationship
-from sqlalchemy import ForeignKey, DateTime
 from datetime import datetime
-from sqlalchemy import func
+
+from sqlalchemy import DateTime, ForeignKey, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
 
 class Base(DeclarativeBase):
     pass
@@ -18,7 +19,7 @@ class RefreshToken(Base):
     __tablename__ = "tokens_db"
     id:Mapped[int]=mapped_column(primary_key=True)
     user_id:Mapped[int]=mapped_column(ForeignKey('users_db.id'))
-    token_hash:Mapped[str]= mapped_column(nullable=False)
+    token_hash:Mapped[str]= mapped_column(nullable=False,unique = True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),server_default=func.now())
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),nullable=False)
     is_revoked: Mapped[bool] = mapped_column(default=False)

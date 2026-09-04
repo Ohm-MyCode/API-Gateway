@@ -11,3 +11,6 @@ wheels/
 .env
 *.pem
 notes.txt
+.ruff_cache/
+.vscode/
+.pytest_cache

@@ -1,8 +1,10 @@
 import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from url_service.models import Base
-from url_service.metrics import register_db_metrics
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
 from url_service.config import settings
+from url_service.metrics import register_db_metrics
+from url_service.models import Base
 
 if settings.URL_DB is None:
     raise ValueError("Check Url service DB")

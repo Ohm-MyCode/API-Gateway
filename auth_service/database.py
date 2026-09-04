@@ -1,8 +1,10 @@
 import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from auth_service.models import Base
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
 from auth_service.config import dbsettings
 from auth_service.metrics import register_db_metrics
+from auth_service.models import Base
 
 if dbsettings.AUTH_DB is None:
     raise ValueError("Check Url service DB")

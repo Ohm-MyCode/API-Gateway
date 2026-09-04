@@ -1,17 +1,24 @@
-from fastapi import APIRouter, Depends,HTTPException,Request,Path
-from url_service.database import SessionLocal
-from fastapi.responses import RedirectResponse
 from typing import Annotated
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select,delete
-from sqlalchemy.exc import IntegrityError
-from url_service.models import Url
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Request
+from fastapi.responses import RedirectResponse
 from nanoid import generate
-from url_service.schema import GetUrlModel,ReturnUrlModel
-from url_service.metrics import total_shortcodes_created,shortcode_not_found,total_redirects,cache_metrics
-from url_service.logger import log 
-from url_service.config import settings
 from redis import RedisError
+from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from url_service.config import settings
+from url_service.database import SessionLocal
+from url_service.logger import log
+from url_service.metrics import (
+    cache_metrics,
+    shortcode_not_found,
+    total_redirects,
+    total_shortcodes_created,
+)
+from url_service.models import Url
+from url_service.schema import GetUrlModel, ReturnUrlModel
 
 router = APIRouter()
 

@@ -1,18 +1,22 @@
-from fastapi import APIRouter,Depends,HTTPException, status, Response,Cookie, Request
-from auth_service.database import SessionLocal
+import hashlib
+import hmac
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
-from auth_service.schema import UserLogin,CreateUser
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select,update,delete
-from auth_service.models import User, RefreshToken
-from fastapi.security import OAuth2PasswordBearer
-from pwdlib import PasswordHash
-import jwt,hmac,hashlib
-from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
-from datetime import datetime, timedelta, timezone
-from auth_service.config import settings
-from auth_service.metrics import total_login_attempts,refresh_token_attempts
 
+import jwt
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
+from fastapi.security import OAuth2PasswordBearer
+from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
+from nanoid import generate
+from pwdlib import PasswordHash
+from sqlalchemy import delete, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from auth_service.config import settings
+from auth_service.database import SessionLocal
+from auth_service.metrics import refresh_token_attempts, total_login_attempts
+from auth_service.models import RefreshToken, User
+from auth_service.schema import CreateUser, UserLogin
 
 #router = APIRouter(prefix="/auth")
 router = APIRouter()
@@ -32,6 +36,12 @@ async def get_current_request_id(request: Request) -> int:
 
 @router.post("/signup",status_code=status.HTTP_201_CREATED)
 async def create_user(user:CreateUser, db:Annotated[AsyncSession,Depends(get_db)]):
+    if user.password is None:
+            raise HTTPException(status_code= 422 , detail = "Password Cannot be Empty")
+    if user.email is None:
+            raise HTTPException(status_code= 422 , detail = "Email Cannot be Empty")
+    if user.name is None:
+            raise HTTPException(status_code= 422 , detail = "Name Cannot be Empty")
     stmt= select(User).where(User.email==user.email)
     result = (await db.scalars(stmt)).first()
     if result is not None:
@@ -45,6 +55,8 @@ async def create_user(user:CreateUser, db:Annotated[AsyncSession,Depends(get_db)
 
 @router.post("/login")
 async def login(user:UserLogin, db:Annotated[AsyncSession,Depends(get_db)],response:Response):
+    if user.email is None:
+        raise HTTPException(status_code= 422 , detail = "Email Cannot be Empty")
     stmt = select(User).where(User.email==user.email)
     result = await db.scalar(stmt)
     if (result is None):
@@ -56,10 +68,10 @@ async def login(user:UserLogin, db:Annotated[AsyncSession,Depends(get_db)],respo
 
     total_login_attempts.labels(result="successful").inc()
 
-    expire_access = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    expire_refresh = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    expire_access = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire_refresh = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     access_token_payload ={"sub":str(result.id),"exp":expire_access,"type":"access"}
-    refresh_token_payload ={"sub":str(result.id),"exp":expire_refresh,"type":"refresh"}
+    refresh_token_payload ={"sub":str(result.id),"exp":expire_refresh,"type":"refresh","jti":generate()}
     access_token = jwt.encode(access_token_payload, settings.PRIVATE_KEY,algorithm=settings.JWT_ALGORITHM)
     refresh_token = jwt.encode(refresh_token_payload, settings.PRIVATE_KEY,algorithm=settings.JWT_ALGORITHM)
     hashed_reftoken= hmac.new(settings.TOKEN_HASH_KEY.encode(),refresh_token.encode(),hashlib.sha256).hexdigest()
@@ -96,9 +108,9 @@ async def get_new_token(token:Annotated[str|None,Cookie(alias="refresh_token")],
                 refresh_token_attempts.labels(result="Revoked_Token").inc()
                 raise HTTPException(status_code=401, detail="Security alert — please log in again")
         
-        expire_access = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        expire_refresh = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-        refresh_token_payload ={"sub":str(result.user_id),"exp":expire_refresh,"type":"refresh"}
+        expire_access = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire_refresh = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        refresh_token_payload ={"sub":str(result.user_id),"exp":expire_refresh,"type":"refresh","jti":generate()}
         access_token_payload ={"sub":str(result.user_id),"exp":expire_access,"type":"access"}
         access_token = jwt.encode(access_token_payload, settings.PRIVATE_KEY,settings.JWT_ALGORITHM)
         refresh_token = jwt.encode(refresh_token_payload, settings.PRIVATE_KEY,settings.JWT_ALGORITHM)

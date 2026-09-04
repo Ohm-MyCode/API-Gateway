@@ -1,4 +1,4 @@
-from prometheus_client import Histogram,Counter
+from prometheus_client import Counter, Histogram
 
 request_latency = Histogram("request_latency", "Request Latency")
 rate_limit_blocks = Counter(

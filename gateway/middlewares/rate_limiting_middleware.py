@@ -1,9 +1,12 @@
-from gateway.config import SERVICES,settings, AUTH_ROUTES
-from fastapi.responses import JSONResponse
 import time
-from gateway.logger import log
+
+from fastapi.responses import JSONResponse
 from redis.exceptions import RedisError
+
+from gateway.config import AUTH_ROUTES, SERVICES, settings
+from gateway.logger import log
 from gateway.metrics import rate_limit_blocks
+
 
 async def rate_limiter(request,call_next):
     if request.method == "GET":

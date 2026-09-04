@@ -1,6 +1,8 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import cached_property
 from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     PUBLIC_KEY_PATH: str

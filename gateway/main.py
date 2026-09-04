@@ -1,14 +1,20 @@
-from fastapi import FastAPI, Request, HTTPException
 from contextlib import asynccontextmanager
-import httpx
-from gateway.config import settings
-from fastapi.responses import Response
-from redis.asyncio import Redis
-from gateway.logger import log
-from gateway.middlewares import auth_middleware , logging_middleware, rate_limiting_middleware
-from gateway.config import SERVICES
 from time import perf_counter
+
+import httpx
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import Response
 from prometheus_fastapi_instrumentator import Instrumentator
+from redis.asyncio import Redis
+
+from gateway.config import SERVICES, settings
+from gateway.logger import log
+from gateway.middlewares import (
+    auth_middleware,
+    logging_middleware,
+    rate_limiting_middleware,
+)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -49,12 +55,13 @@ async def proxy(service: str,path: str,request: Request):
         raise HTTPException(status_code=404,detail="Unknown service")
     body = await request.body()
     target_url = f"{baseurl}/{path}"
-    request_id = getattr(request.state,"request_id")
+    request_id = getattr(request.state,"request_id",None)
 
     if service == "auth":
         headers = dict(request.headers)
         headers.pop("host", None)
-        headers["x-request-id"]=request_id
+        if request_id is not None:
+            headers["x-request-id"]=request_id
 
     else:
         headers={}
