@@ -13,7 +13,7 @@ def test_logout_flow():
     assert response3.status_code == 200, response3.json()
 
     response3 = client.post(url="/logout", cookies= {"refresh_token":response2.cookies["refresh_token"]})
-    assert response3.status_code == 200, response3.json() #logout twice test
+    assert response3.status_code == 200, response3.json() #logout twice test expected 200 coz if logged out user tries again it doesnt matter.
     
 
     response = client.post("/refresh",cookies={"refresh_token": response2.cookies["refresh_token"]})

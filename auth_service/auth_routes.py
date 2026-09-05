@@ -36,12 +36,6 @@ async def get_current_request_id(request: Request) -> int:
 
 @router.post("/signup",status_code=status.HTTP_201_CREATED)
 async def create_user(user:CreateUser, db:Annotated[AsyncSession,Depends(get_db)]):
-    if user.password is None:
-            raise HTTPException(status_code= 422 , detail = "Password Cannot be Empty")
-    if user.email is None:
-            raise HTTPException(status_code= 422 , detail = "Email Cannot be Empty")
-    if user.name is None:
-            raise HTTPException(status_code= 422 , detail = "Name Cannot be Empty")
     stmt= select(User).where(User.email==user.email)
     result = (await db.scalars(stmt)).first()
     if result is not None:

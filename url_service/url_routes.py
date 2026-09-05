@@ -30,13 +30,15 @@ async def get_db():
         await db.close()
 
 async def get_current_user_id(request: Request) -> int:
+    user_id = request.headers.get("x-user-id")
+    if not user_id:
+        raise HTTPException(status_code = 401 , detail = "Please Login Again")
     return int(request.headers["x-user-id"])
 
 
 @router.post("/shorten")
 async def create_new_shortcode(body:GetUrlModel,db:Annotated[AsyncSession, Depends(get_db)],
                                uid:Annotated[int, Depends(get_current_user_id)]):
-    shortcode = generate(size=8)
     while(True):
         try:
             shortcode=generate(size=8)
@@ -50,8 +52,8 @@ async def create_new_shortcode(body:GetUrlModel,db:Annotated[AsyncSession, Depen
             continue
 
 @router.delete("/delete/{short_code}")
-async def delete_shortcode(short_code:Annotated[str,Path(min_length=8, max_length=8)],db:Annotated[AsyncSession, Depends(get_db)],
-                           uid:Annotated[int, Depends(get_current_user_id)],request):
+async def delete_shortcode(request:Request, short_code:Annotated[str,Path(min_length=8, max_length=8)],db:Annotated[AsyncSession, Depends(get_db)],
+                           uid:Annotated[int, Depends(get_current_user_id)]):
     stmt = select(Url).where(Url.shortcode==short_code)
     result = await db.scalar(stmt)
     if (result is None) or (result.owner_id != uid):
@@ -86,7 +88,7 @@ async def get_all_shortcodes(db:Annotated[AsyncSession, Depends(get_db)],uid:Ann
 
 @router.patch("/update/{short_code}")
 async def update_shortcode(short_code:Annotated[str,Path(min_length=8, max_length=8)],db:Annotated[AsyncSession, Depends(get_db)],
-                           uid:Annotated[int, Depends(get_current_user_id)],body:GetUrlModel,request):
+                           uid:Annotated[int, Depends(get_current_user_id)],body:GetUrlModel,request:Request):
     stmt = select(Url).where(Url.shortcode==short_code)
     result = await db.scalar(stmt)
     if (result is None) or (result.owner_id != uid):
@@ -105,7 +107,7 @@ async def update_shortcode(short_code:Annotated[str,Path(min_length=8, max_lengt
 
 async def lookup_and_cache(short_code: str, db: AsyncSession, redis) -> str:
     stmt = select(Url).where(Url.shortcode == short_code)
-    result = (await db.scalars(stmt)).one_or_none()
+    result = (await db.scalar(stmt))
 
     if result is None:
         shortcode_not_found.inc()
