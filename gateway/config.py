@@ -7,10 +7,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     PUBLIC_KEY_PATH: str
     JWT_ALGORITHM: str = "RS256"
-    redis_host:str="redis"
-    redis_port:int=6379
-    max_capacity:int=200
-    refill_rate:int = 100
+    redis_host:str
+    redis_port:int
+    max_capacity_auth_routes:int
+    max_capacity_url_routes:int
+    refill_rate:int =0
 
     @cached_property
     def PUBLIC_KEY(self):

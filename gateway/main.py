@@ -31,10 +31,19 @@ app = FastAPI(lifespan=lifespan)
 
 Instrumentator().instrument(app).expose(app)
 
-app.middleware("http")(logging_middleware.req_logging)
-app.middleware("http")(auth_middleware.auth_middleware)
 app.middleware("http")(rate_limiting_middleware.rate_limiter)
+app.middleware("http")(auth_middleware.auth_middleware)
+app.middleware("http")(logging_middleware.req_logging)
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+@app.get("/protected/test")
+async def protected_test(request: Request):
+    return {
+        "userid": getattr(request.state, "userid", None)
+    }
 
 @app.get("/{shortcode}")
 async def resolve_shortcode(shortcode: str, request: Request):

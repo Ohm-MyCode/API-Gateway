@@ -25,8 +25,12 @@ async def rate_limiter(request,call_next):
 
 
     try:
-        allowed = await script(keys=[bucket_key],args=[settings.max_capacity,settings.refill_rate,
-                                                       current_time,],)
+        if user_id is not None:
+            allowed = await script(keys=[bucket_key],args=[settings.max_capacity_url_routes,
+                                                           settings.refill_rate,current_time,],)
+        else:
+            allowed = await script(keys=[bucket_key],args=[settings.max_capacity_auth_routes,
+                                                        settings.refill_rate,current_time,],)
     except RedisError:
         log.critical("redis_error", operation="token_bucket_limiter",)
         if request.url.path in AUTH_ROUTES: #fail close for authroutes and fail open for others

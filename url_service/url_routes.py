@@ -69,7 +69,7 @@ async def delete_shortcode(request:Request, short_code:Annotated[str,Path(min_le
         log.error("Redis Unreachable")
     return {'Message':'ShortCode and Url deleted successfully'}
 
-@router.get("/url/{short_code}",response_model=ReturnUrlModel)
+@router.get("/get_url/{short_code}",response_model=ReturnUrlModel)
 async def get_short_code(short_code:Annotated[str,Path(min_length=8, max_length=8)],db:Annotated[AsyncSession, Depends(get_db)],
                  uid:Annotated[int, Depends(get_current_user_id)]):
     stmt = select(Url).where(Url.shortcode==short_code)

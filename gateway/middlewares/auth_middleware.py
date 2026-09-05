@@ -17,13 +17,9 @@ async def auth_middleware(request, call_next):
         
     auth = request.headers.get("Authorization")
     if not auth:
-        log.warning("authentication_failed",
-                    path=request.url.path,
-                        )
-        return JSONResponse(
-            {"detail": "Unauthorized"},
-            status_code=401,
-        )
+        log.warning("authentication_failed",path=request.url.path, )
+        return JSONResponse({"detail": "Unauthorized"},status_code=401,)
+    
     try:
         parts = auth.split()
 
@@ -35,6 +31,10 @@ async def auth_middleware(request, call_next):
 
         token = parts[1]
         payload = jwt.decode(token,settings.PUBLIC_KEY , algorithms=[settings.JWT_ALGORITHM])
+        
+        if (payload.get("type") != "access") or (payload.get("type") is None):
+            raise jwt.InvalidTokenError("Refresh token not allowed")
+
         request.state.userid = payload["sub"]
         
     except jwt.PyJWTError:
