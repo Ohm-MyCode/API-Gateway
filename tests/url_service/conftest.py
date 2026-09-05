@@ -8,7 +8,7 @@ from url_service.main import app
 from url_service.models import Url
 from url_service.url_routes import get_db
 
-db_url= "postgresql+psycopg://test:test@localhost:5433/urltestdb"
+db_url= "postgresql+psycopg://test:test@localhost:5434/urltestdb"
 engine = create_async_engine(db_url,pool_size=5,max_overflow=5,pool_timeout=20)
 TestSession = async_sessionmaker(bind=engine,class_=AsyncSession,expire_on_commit=False)
 
