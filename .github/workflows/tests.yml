@@ -32,8 +32,6 @@ jobs:
             - name: Create .env
               run: |
                     cat > .env << EOF
-                    URL_DB=postgresql+psycopg://test:test@localhost:5434/urltestdb
-                    AUTH_DB=postgresql+psycopg://test:test@localhost:5433/authtestdb
                     PRIVATE_KEY_PATH=app/secrets/private.pem
                     PUBLIC_KEY_PATH=app/secrets/public.pem
                     TOKEN_HASH_KEY=${{ secrets.TOKEN_HASH_KEY }}
