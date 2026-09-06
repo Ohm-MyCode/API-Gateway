@@ -1,8 +1,25 @@
+![Python](https://img.shields.io/badge/Python-3.13-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-Framework-green)
+![Docker](https://img.shields.io/badge/Docker-Containerized-blue)
+
 # API Gateway & URL Shortener Microservice Platform
 
 A FastAPI-based microservices platform featuring an API Gateway, Authentication Service, and URL Service. The gateway provides request routing, JWT authentication, rate limiting, and structured logging, while Prometheus and Grafana provide observability across all services.
 
-Built as a backend infrastructure learning project.
+Built as a backend infrastructure and distributed systems learning project.
+
+## Architecture
+![Architecture Diagram](docs/architecture.png)
+
+### Request Flow
+
+1. Client sends request to API Gateway
+2. Logging middleware captures request metadata
+3. JWT is verified locally in gateway using the public key
+4. Redis-backed token bucket rate limiting is applied
+5. Gateway injects `X-User-ID` for authenticated URL-service requests
+6. Request is proxied to the appropriate backend service
+7. Metrics are scraped by Prometheus and visualized in Grafana
 
 ## Services
 | Service   | Responsibility                        | Stack                        |
@@ -43,6 +60,7 @@ Built as a backend infrastructure learning project.
 ### Testing
 - Pytest, Pytest-asyncio
 - RESPX
+- Continuous Integration (Github Actions)
 
 ### Infrastructure
 - Docker
@@ -99,7 +117,6 @@ Edit the remaining values in .env as required.
 ## Running Locally
 
 ```bash
-git clone https://github.com/Ohm-MyCode/API-Gateway.git
 mkdir -p app/secrets
 
 openssl genrsa -out app/secrets/private.pem 4096
@@ -135,6 +152,18 @@ The script will:
 
 _Note_: Pytest runs 3 times because of shared Prometheus registry across services in a single process, not an issue in production since each service runs independently
 
+## Continuous Integration
+
+GitHub Actions automatically executes:
+
+- Dependency installation
+- Database migrations
+- Authentication Service tests
+- Gateway tests
+- URL Service tests
+
+on every push to the main branch.
+
 ## Future Improvements
 
 - Add tracing using OpenTelemetry.
@@ -154,7 +183,7 @@ _Note_: Pytest runs 3 times because of shared Prometheus registry across service
 
 - **Integration Testing** – Writing and debugging integration tests with pytest was challenging due to fixtures not properly handling database cleanup between test runs, Redis-related timing issues, and ensuring application lifespan events executed correctly within the test environment.
 
-- **Python Imports in Docker** – Managing imports inside Docker containers was challenging as relative imports kept breaking because of WORKDIR.
+- **Python Imports in Docker** – Ensuring consistent import resolution across local development, testing, and Docker containers required restructuring imports and carefully managing container working directories.
 
 
 ## AI Usage

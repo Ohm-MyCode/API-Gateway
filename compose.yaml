@@ -45,7 +45,7 @@ services:
       auth-db:
         condition: service_healthy
     volumes:
-      - ./auth_service/keys:/app/secrets:ro
+      - ./app/secrets:/app/secrets:ro
 
   url-service:
     build:
@@ -80,7 +80,7 @@ services:
       redis:
         condition: service_started
     volumes:
-      - ./auth_service/keys/public.pem:/app/secrets/public.pem:ro
+      - ./app/secrets/public.pem:/app/secrets/public.pem:ro
     ports:
       - "8000:8000"
   prometheus:
@@ -123,9 +123,7 @@ services:
       - run
       - --server.http.listen-addr=0.0.0.0:12345
       - /etc/alloy/config.alloy
-  debug:
-    image: nicolaka/netshoot
-    command: sleep infinity
+
 volumes:
   auth_db_vol:
   url_db_vol:
