@@ -42,8 +42,8 @@ jobs:
                     REFRESH_TOKEN_EXPIRE_DAYS=7
                     POSTGRES_USER=test
                     POSTGRES_PASSWORD=test
-                    max_capacity_auth_routes=2
-                    max_capacity_url_routes=5
+                    max_capacity_auth_routes=1
+                    max_capacity_url_routes=2
                     redis_host=localhost
                     redis_port=6379
                     EOF
